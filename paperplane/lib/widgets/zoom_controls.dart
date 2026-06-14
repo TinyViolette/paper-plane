@@ -2,22 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 
 class ZoomControls extends StatefulWidget {
-  final MapController mapController;
-  final VoidCallback? onLongPressUpStart;
-  final VoidCallback? onLongPressDownStart;
-  final VoidCallback? onLongPressEnd;
-
-  const ZoomControls({
-    super.key,
-    required this.mapController,
-    this.onLongPressUpStart,
-    this.onLongPressDownStart,
-    this.onLongPressEnd,
-  });
+  const ZoomControls({super.key});
 
   @override
   State<ZoomControls> createState() => _ZoomControlsState();
@@ -26,20 +16,10 @@ class ZoomControls extends StatefulWidget {
 class _ZoomControlsState extends State<ZoomControls> {
   Timer? _repeatTimer;
 
-  double get _currentZoom => widget.mapController.camera.zoom;
-
-  void _zoom(double delta) {
-    final newZoom = (_currentZoom + delta).clamp(
-      MapConstants.minZoom,
-      MapConstants.maxZoom,
-    );
-    widget.mapController.move(widget.mapController.camera.center, newZoom);
-  }
-
-  void _startRepeat(double delta) {
+  void _startRepeat(VoidCallback action) {
     _repeatTimer?.cancel();
     _repeatTimer = Timer.periodic(MapConstants.zoomRepeatDuration, (_) {
-      _zoom(delta);
+      action();
     });
   }
 
@@ -56,6 +36,8 @@ class _ZoomControlsState extends State<ZoomControls> {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<ZoomCubit>();
+
     return Positioned(
       right: 16,
       bottom: 16,
@@ -63,21 +45,14 @@ class _ZoomControlsState extends State<ZoomControls> {
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: () => _zoom(-MapConstants.zoomStep),
+            onTap: cubit.zoomOut,
             onLongPressStart: (_) {
-              _startRepeat(-MapConstants.zoomStep);
-              widget.onLongPressUpStart?.call();
+              _startRepeat(cubit.zoomOut);
             },
-            onLongPressEnd: (_) {
-              _stopRepeat();
-              widget.onLongPressEnd?.call();
-            },
-            onLongPressCancel: () {
-              _stopRepeat();
-              widget.onLongPressEnd?.call();
-            },
+            onLongPressEnd: (_) => _stopRepeat(),
+            onLongPressCancel: _stopRepeat,
             child: IconButton(
-              onPressed: () => _zoom(-MapConstants.zoomStep),
+              onPressed: cubit.zoomOut,
               icon: Transform.rotate(
                 angle: pi / 2,
                 child: const Icon(Icons.arrow_circle_left, size: 36),
@@ -85,21 +60,14 @@ class _ZoomControlsState extends State<ZoomControls> {
             ),
           ),
           GestureDetector(
-            onTap: () => _zoom(MapConstants.zoomStep),
+            onTap: cubit.zoomIn,
             onLongPressStart: (_) {
-              _startRepeat(MapConstants.zoomStep);
-              widget.onLongPressDownStart?.call();
+              _startRepeat(cubit.zoomIn);
             },
-            onLongPressEnd: (_) {
-              _stopRepeat();
-              widget.onLongPressEnd?.call();
-            },
-            onLongPressCancel: () {
-              _stopRepeat();
-              widget.onLongPressEnd?.call();
-            },
+            onLongPressEnd: (_) => _stopRepeat(),
+            onLongPressCancel: _stopRepeat,
             child: IconButton(
-              onPressed: () => _zoom(MapConstants.zoomStep),
+              onPressed: cubit.zoomIn,
               icon: Transform.rotate(
                 angle: pi / 2,
                 child: const Icon(Icons.arrow_circle_right, size: 36),
