@@ -34,14 +34,15 @@ class PlaneCubit extends Cubit<PlaneState> {
   }
 
   void _onMapEvent(MapEvent event) {
-    final isAtMax = _mapController.camera.zoom >= MapConstants.maxZoom;
-    if (isAtMax) {
+    final isLanded = _mapController.camera.zoom >= MapConstants.maxZoom;
+    if (isLanded) {
       _joystickCubit.returnToCenter();
     }
     _emitState();
   }
 
   void _onJoystickChanged(JoystickState joystickState) {
+    if (state.isLanded) return;
     if (joystickState is JoystickAnimating && _floatMode != FloatMode.zoom) {
       _floatMode = FloatMode.zoom;
       _floatPhase = 0;
@@ -116,7 +117,13 @@ class PlaneCubit extends Cubit<PlaneState> {
   void _emitState() {
     final joystick = _joystickCubit.state.offset;
     final floatY = sin(_floatPhase) * _currentAmplitude;
-    final isAtMax = _mapController.camera.zoom >= MapConstants.maxZoom;
+    final isLanded = _mapController.camera.zoom >= MapConstants.maxZoom;
+
+    if (isLanded) {
+      _floatMode = FloatMode.none;
+    } else if (_floatMode == FloatMode.none) {
+      _floatMode = FloatMode.joystick;
+    }
 
     final joystickOffset = Offset(
       joystick.dx * MapConstants.joystickFloatAmplitude,
@@ -129,7 +136,7 @@ class PlaneCubit extends Cubit<PlaneState> {
       planeOffset: clamped,
       floatAmplitude: _currentAmplitude,
       floatHalfPeriod: _currentHalfPeriod,
-      isJoystickEnabled: !isAtMax,
+      isLanded: isLanded,
     ));
   }
 

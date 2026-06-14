@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/cubit/plane/plane_cubit.dart';
+import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 
 class ZoomControls extends StatefulWidget {
@@ -73,27 +75,39 @@ class _ZoomControlsState extends State<ZoomControls> {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: cubit.zoomIn,
-            onLongPressStart: (_) {
-              _startRepeat(cubit.zoomIn);
-              widget.onZoomButtonStart?.call();
+          BlocBuilder<PlaneCubit, PlaneState>(
+            buildWhen: (prev, curr) => prev.isLanded != curr.isLanded,
+            builder: (context, planeState) {
+              final isLanded = planeState.isLanded;
+              return IgnorePointer(
+                ignoring: isLanded,
+                child: Opacity(
+                  opacity: isLanded ? 0.3 : 1.0,
+                  child: GestureDetector(
+                    onTap: cubit.zoomIn,
+                    onLongPressStart: (_) {
+                      _startRepeat(cubit.zoomIn);
+                      widget.onZoomButtonStart?.call();
+                    },
+                    onLongPressEnd: (_) {
+                      _stopRepeat();
+                      widget.onZoomButtonEnd?.call();
+                    },
+                    onLongPressCancel: () {
+                      _stopRepeat();
+                      widget.onZoomButtonEnd?.call();
+                    },
+                    child: IconButton(
+                      onPressed: cubit.zoomIn,
+                      icon: Transform.rotate(
+                        angle: pi / 2,
+                        child: const Icon(Icons.arrow_circle_right, size: 36),
+                      ),
+                    ),
+                  ),
+                ),
+              );
             },
-            onLongPressEnd: (_) {
-              _stopRepeat();
-              widget.onZoomButtonEnd?.call();
-            },
-            onLongPressCancel: () {
-              _stopRepeat();
-              widget.onZoomButtonEnd?.call();
-            },
-            child: IconButton(
-              onPressed: cubit.zoomIn,
-              icon: Transform.rotate(
-                angle: pi / 2,
-                child: const Icon(Icons.arrow_circle_right, size: 36),
-              ),
-            ),
           ),
         ],
       ),

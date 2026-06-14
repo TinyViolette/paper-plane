@@ -69,9 +69,9 @@ class _JoystickOverlayState extends State<JoystickOverlay>
       bottom: 16,
       child: BlocBuilder<PlaneCubit, PlaneState>(
         buildWhen: (prev, curr) =>
-            prev.isJoystickEnabled != curr.isJoystickEnabled,
+            prev.isLanded != curr.isLanded,
         builder: (context, planeState) {
-          final enabled = planeState.isJoystickEnabled;
+          final enabled = !planeState.isLanded;
           return AnimatedBuilder(
             animation: _fadeController,
             builder: (context, child) {
