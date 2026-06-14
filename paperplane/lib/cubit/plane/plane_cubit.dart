@@ -132,12 +132,27 @@ class PlaneCubit extends Cubit<PlaneState> {
     final totalOffset = joystickOffset + Offset(0, floatY);
     final clamped = _clampToRadius(totalOffset, MapConstants.planeMoveRadiusLimit);
 
+    final (rotation, flipped) = _computeRotation(joystick);
+
     emit(PlaneState(
       planeOffset: clamped,
       floatAmplitude: _currentAmplitude,
       floatHalfPeriod: _currentHalfPeriod,
       isLanded: isLanded,
+      planeRotation: rotation,
+      isFlipped: flipped,
     ));
+  }
+
+  (double, bool) _computeRotation(Offset screenOffset) {
+    if (screenOffset.distance < MapConstants.planeRotationDeadZone) {
+      return (0, false);
+    }
+    final dy = -screenOffset.dy;
+    final t = (dy + 1) / 2;
+    final rotation = MapConstants.planePitchDown +
+        (MapConstants.planePitchUp - MapConstants.planePitchDown) * t;
+    return (rotation, screenOffset.dx < 0);
   }
 
   Offset _clampToRadius(Offset offset, double radius) {

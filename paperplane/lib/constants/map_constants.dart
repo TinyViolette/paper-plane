@@ -30,4 +30,8 @@ class MapConstants {
   static const Duration zoomFloatHalfPeriod = Duration(milliseconds: 500);
   static const double floatSpeedMinHalfPeriod = 1.0; // seconds (joystick center)
   static const double floatSpeedMaxHalfPeriod = 0.5; // seconds (joystick edge)
+
+  static const double planeRotationDeadZone = 0.05;
+  static const double planePitchUp = -50;
+  static const double planePitchDown = 120;
 }
