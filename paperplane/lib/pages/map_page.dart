@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/widgets/plane_overlay.dart';
 import 'package:paperplane/widgets/zoom_controls.dart';
 
 class MapPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
+  final _planeKey = GlobalKey<PlaneOverlayState>();
 
   @override
   void dispose() {
@@ -35,24 +37,15 @@ class _MapPageState extends State<MapPage> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.paperplane',
               ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: MapConstants.initialCenter,
-                    width: MapConstants.markerWidth,
-                    height: 200,
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/images/plane.png',
-                      width: MapConstants.markerWidth,
-                      fit: BoxFit.fitWidth,
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
-          ZoomControls(mapController: _mapController),
+          PlaneOverlay(key: _planeKey, mapController: _mapController),
+          ZoomControls(
+            mapController: _mapController,
+            onLongPressUpStart: () => _planeKey.currentState?.moveUp(),
+            onLongPressDownStart: () => _planeKey.currentState?.moveDown(),
+            onLongPressEnd: () => _planeKey.currentState?.returnToCenter(),
+          ),
         ],
       ),
     );

@@ -7,8 +7,17 @@ import 'package:paperplane/constants/map_constants.dart';
 
 class ZoomControls extends StatefulWidget {
   final MapController mapController;
+  final VoidCallback? onLongPressUpStart;
+  final VoidCallback? onLongPressDownStart;
+  final VoidCallback? onLongPressEnd;
 
-  const ZoomControls({super.key, required this.mapController});
+  const ZoomControls({
+    super.key,
+    required this.mapController,
+    this.onLongPressUpStart,
+    this.onLongPressDownStart,
+    this.onLongPressEnd,
+  });
 
   @override
   State<ZoomControls> createState() => _ZoomControlsState();
@@ -18,10 +27,6 @@ class _ZoomControlsState extends State<ZoomControls> {
   Timer? _repeatTimer;
 
   double get _currentZoom => widget.mapController.camera.zoom;
-
-  bool get _canZoomIn => _currentZoom < MapConstants.maxZoom;
-
-  bool get _canZoomOut => _currentZoom > MapConstants.minZoom;
 
   void _zoom(double delta) {
     final newZoom = (_currentZoom + delta).clamp(
@@ -58,16 +63,21 @@ class _ZoomControlsState extends State<ZoomControls> {
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: _canZoomOut ? () => _zoom(-MapConstants.zoomStep) : null,
-            onLongPressStart: _canZoomOut
-                ? (_) => _startRepeat(-MapConstants.zoomStep)
-                : null,
-            onLongPressEnd: (_) => _stopRepeat(),
-            onLongPressCancel: _stopRepeat,
+            onTap: () => _zoom(-MapConstants.zoomStep),
+            onLongPressStart: (_) {
+              _startRepeat(-MapConstants.zoomStep);
+              widget.onLongPressUpStart?.call();
+            },
+            onLongPressEnd: (_) {
+              _stopRepeat();
+              widget.onLongPressEnd?.call();
+            },
+            onLongPressCancel: () {
+              _stopRepeat();
+              widget.onLongPressEnd?.call();
+            },
             child: IconButton(
-              onPressed: _canZoomOut
-                  ? () => _zoom(-MapConstants.zoomStep)
-                  : null,
+              onPressed: () => _zoom(-MapConstants.zoomStep),
               icon: Transform.rotate(
                 angle: pi / 2,
                 child: const Icon(Icons.arrow_circle_left, size: 36),
@@ -75,16 +85,21 @@ class _ZoomControlsState extends State<ZoomControls> {
             ),
           ),
           GestureDetector(
-            onTap: _canZoomIn ? () => _zoom(MapConstants.zoomStep) : null,
-            onLongPressStart: _canZoomIn
-                ? (_) => _startRepeat(MapConstants.zoomStep)
-                : null,
-            onLongPressEnd: (_) => _stopRepeat(),
-            onLongPressCancel: _stopRepeat,
+            onTap: () => _zoom(MapConstants.zoomStep),
+            onLongPressStart: (_) {
+              _startRepeat(MapConstants.zoomStep);
+              widget.onLongPressDownStart?.call();
+            },
+            onLongPressEnd: (_) {
+              _stopRepeat();
+              widget.onLongPressEnd?.call();
+            },
+            onLongPressCancel: () {
+              _stopRepeat();
+              widget.onLongPressEnd?.call();
+            },
             child: IconButton(
-              onPressed: _canZoomIn
-                  ? () => _zoom(MapConstants.zoomStep)
-                  : null,
+              onPressed: () => _zoom(MapConstants.zoomStep),
               icon: Transform.rotate(
                 angle: pi / 2,
                 child: const Icon(Icons.arrow_circle_right, size: 36),
