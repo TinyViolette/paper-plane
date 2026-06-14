@@ -18,6 +18,21 @@ class MapPage extends StatelessWidget {
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.example.paperplane',
           ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: MapConstants.initialCenter,
+                width: MapConstants.markerWidth,
+                height: 200,
+                alignment: Alignment.center,
+                child: Image.asset(
+                  'assets/images/plane.png',
+                  width: MapConstants.markerWidth,
+                  fit: BoxFit.fitWidth,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
