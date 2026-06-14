@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
+import 'package:paperplane/cubit/joystick/joystick_state.dart';
 import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
-import 'package:paperplane/cubit/zoom/zoom_state.dart';
+import 'package:paperplane/widgets/joystick_overlay.dart';
 import 'package:paperplane/widgets/plane_overlay.dart';
 import 'package:paperplane/widgets/zoom_controls.dart';
 
@@ -17,19 +20,22 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
-  late final PlaneCubit _planeCubit;
+  late final JoystickCubit _joystickCubit;
   late final ZoomCubit _zoomCubit;
+  late final PlaneCubit _planeCubit;
 
   @override
   void initState() {
     super.initState();
-    _planeCubit = PlaneCubit(_mapController);
+    _joystickCubit = JoystickCubit();
     _zoomCubit = ZoomCubit();
+    _planeCubit = PlaneCubit(_mapController, _joystickCubit);
   }
 
   @override
   void dispose() {
     _planeCubit.close();
+    _joystickCubit.close();
     _zoomCubit.close();
     _mapController.dispose();
     super.dispose();
@@ -39,12 +45,19 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<PlaneCubit>.value(value: _planeCubit),
+        BlocProvider<JoystickCubit>.value(value: _joystickCubit),
         BlocProvider<ZoomCubit>.value(value: _zoomCubit),
+        BlocProvider<PlaneCubit>.value(value: _planeCubit),
       ],
-      child: BlocListener<ZoomCubit, ZoomState>(
+      child: BlocListener<JoystickCubit, JoystickState>(
         listener: (context, state) {
-          _mapController.move(_mapController.camera.center, state.zoom);
+          final dx = state.offset.dx * MapConstants.joystickMapSpeed;
+          final dy = -state.offset.dy * MapConstants.joystickMapSpeed;
+          final center = _mapController.camera.center;
+          _mapController.move(
+            LatLng(center.latitude + dy, center.longitude + dx),
+            _mapController.camera.zoom,
+          );
         },
         child: Scaffold(
           body: Stack(
@@ -54,6 +67,9 @@ class _MapPageState extends State<MapPage> {
                 options: MapOptions(
                   initialCenter: MapConstants.initialCenter,
                   initialZoom: MapConstants.initialZoom,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none,
+                  ),
                 ),
                 children: [
                   TileLayer(
@@ -64,7 +80,11 @@ class _MapPageState extends State<MapPage> {
                 ],
               ),
               const PlaneOverlay(),
-              const ZoomControls(),
+              const JoystickOverlay(),
+              ZoomControls(
+                onZoomButtonStart: () => _planeCubit.startZoomFloating(),
+                onZoomButtonEnd: () => _planeCubit.stopZoomFloating(),
+              ),
             ],
           ),
         ),

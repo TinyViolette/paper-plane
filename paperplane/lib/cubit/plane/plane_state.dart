@@ -1,31 +1,13 @@
-sealed class PlaneState {
-  final double currentOffset;
+import 'dart:ui';
 
-  const PlaneState(this.currentOffset);
-}
+class PlaneState {
+  final Offset planeOffset; // final clamped position
+  final double floatAmplitude;
+  final Duration floatHalfPeriod;
 
-class PlaneFloating extends PlaneState {
-  const PlaneFloating(super.currentOffset);
-}
-
-class PlaneMoving extends PlaneState {
-  final double targetOffset;
-  final Duration duration;
-
-  const PlaneMoving({
-    required double currentOffset,
-    required this.targetOffset,
-    required this.duration,
-  }) : super(currentOffset);
-}
-
-class PlaneReturning extends PlaneState {
-  final double targetOffset;
-  final Duration duration;
-
-  const PlaneReturning({
-    required double currentOffset,
-    required this.targetOffset,
-    required this.duration,
-  }) : super(currentOffset);
+  const PlaneState({
+    required this.planeOffset,
+    required this.floatAmplitude,
+    required this.floatHalfPeriod,
+  });
 }

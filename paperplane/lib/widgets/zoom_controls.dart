@@ -7,7 +7,14 @@ import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 
 class ZoomControls extends StatefulWidget {
-  const ZoomControls({super.key});
+  final VoidCallback? onZoomButtonStart;
+  final VoidCallback? onZoomButtonEnd;
+
+  const ZoomControls({
+    super.key,
+    this.onZoomButtonStart,
+    this.onZoomButtonEnd,
+  });
 
   @override
   State<ZoomControls> createState() => _ZoomControlsState();
@@ -48,9 +55,16 @@ class _ZoomControlsState extends State<ZoomControls> {
             onTap: cubit.zoomOut,
             onLongPressStart: (_) {
               _startRepeat(cubit.zoomOut);
+              widget.onZoomButtonStart?.call();
             },
-            onLongPressEnd: (_) => _stopRepeat(),
-            onLongPressCancel: _stopRepeat,
+            onLongPressEnd: (_) {
+              _stopRepeat();
+              widget.onZoomButtonEnd?.call();
+            },
+            onLongPressCancel: () {
+              _stopRepeat();
+              widget.onZoomButtonEnd?.call();
+            },
             child: IconButton(
               onPressed: cubit.zoomOut,
               icon: Transform.rotate(
@@ -63,9 +77,16 @@ class _ZoomControlsState extends State<ZoomControls> {
             onTap: cubit.zoomIn,
             onLongPressStart: (_) {
               _startRepeat(cubit.zoomIn);
+              widget.onZoomButtonStart?.call();
             },
-            onLongPressEnd: (_) => _stopRepeat(),
-            onLongPressCancel: _stopRepeat,
+            onLongPressEnd: (_) {
+              _stopRepeat();
+              widget.onZoomButtonEnd?.call();
+            },
+            onLongPressCancel: () {
+              _stopRepeat();
+              widget.onZoomButtonEnd?.call();
+            },
             child: IconButton(
               onPressed: cubit.zoomIn,
               icon: Transform.rotate(
