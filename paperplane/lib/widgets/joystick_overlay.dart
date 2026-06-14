@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
 import 'package:paperplane/cubit/joystick/joystick_state.dart';
+import 'package:paperplane/cubit/plane/plane_cubit.dart';
+import 'package:paperplane/cubit/plane/plane_state.dart';
 
 class JoystickOverlay extends StatefulWidget {
   const JoystickOverlay({super.key});
@@ -65,24 +67,43 @@ class _JoystickOverlayState extends State<JoystickOverlay>
     return Positioned(
       left: 16,
       bottom: 16,
-      child: AnimatedBuilder(
-        animation: _fadeController,
-        builder: (context, child) {
-          return Opacity(opacity: _fadeController.value, child: child);
-        },
-        child: GestureDetector(
-          onPanStart: _onPanStart,
-          onPanUpdate: _onPanUpdate,
-          onPanEnd: _onPanEnd,
-          child: BlocBuilder<JoystickCubit, JoystickState>(
-            builder: (context, state) {
-              return CustomPaint(
-                size: Size(MapConstants.joystickSize, MapConstants.joystickSize),
-                painter: _JoystickPainter(offset: state.offset),
+      child: BlocBuilder<PlaneCubit, PlaneState>(
+        buildWhen: (prev, curr) =>
+            prev.isJoystickEnabled != curr.isJoystickEnabled,
+        builder: (context, planeState) {
+          final enabled = planeState.isJoystickEnabled;
+          return AnimatedBuilder(
+            animation: _fadeController,
+            builder: (context, child) {
+              return Opacity(
+                opacity: enabled ? _fadeController.value : 0.05,
+                child: child,
               );
             },
-          ),
-        ),
+            child: IgnorePointer(
+              ignoring: !enabled,
+              child: GestureDetector(
+                onPanStart: enabled ? _onPanStart : null,
+                onPanUpdate: enabled ? _onPanUpdate : null,
+                onPanEnd: enabled ? _onPanEnd : null,
+                child: BlocBuilder<JoystickCubit, JoystickState>(
+                  builder: (context, state) {
+                    return CustomPaint(
+                      size: Size(
+                        MapConstants.joystickSize,
+                        MapConstants.joystickSize,
+                      ),
+                      painter: _JoystickPainter(
+                        offset: enabled ? state.offset : Offset.zero,
+                        isEnabled: enabled,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -90,22 +111,23 @@ class _JoystickOverlayState extends State<JoystickOverlay>
 
 class _JoystickPainter extends CustomPainter {
   final Offset offset;
+  final bool isEnabled;
 
-  _JoystickPainter({required this.offset});
+  _JoystickPainter({required this.offset, this.isEnabled = true});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // White transparent base circle
+    // Base circle
     canvas.drawCircle(
       center,
       radius,
-      Paint()..color = Colors.white.withValues(alpha: 0.3),
+      Paint()..color = Colors.white.withValues(alpha: isEnabled ? 0.3 : 0.1),
     );
 
-    // Gray knob
+    // Knob
     final knobRadius = MapConstants.joystickKnobRadius;
     final maxKnobOffset = radius - knobRadius;
     final knobCenter = Offset(
@@ -115,12 +137,16 @@ class _JoystickPainter extends CustomPainter {
     canvas.drawCircle(
       knobCenter,
       knobRadius,
-      Paint()..color = Colors.grey.shade400,
+      Paint()
+        ..color = isEnabled
+            ? Colors.grey.shade400
+            : Colors.grey.shade300.withValues(alpha: 0.4),
     );
   }
 
   @override
   bool shouldRepaint(_JoystickPainter oldDelegate) {
-    return oldDelegate.offset != offset;
+    return oldDelegate.offset != offset ||
+        oldDelegate.isEnabled != isEnabled;
   }
 }
