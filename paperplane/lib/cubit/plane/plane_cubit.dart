@@ -8,6 +8,7 @@ import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
 import 'package:paperplane/cubit/joystick/joystick_state.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
+import 'package:paperplane/utils/rotation_utils.dart';
 
 enum FloatMode { none, joystick, zoom }
 
@@ -130,9 +131,16 @@ class PlaneCubit extends Cubit<PlaneState> {
       joystick.dy * MapConstants.joystickFloatAmplitude,
     );
     final totalOffset = joystickOffset + Offset(0, floatY);
-    final clamped = _clampToRadius(totalOffset, MapConstants.planeMoveRadiusLimit);
+    final clamped = clampToRadius(totalOffset, MapConstants.planeMoveRadiusLimit);
 
-    final (rotation, flipped) = _computeRotation(joystick);
+    final (rotation, flipped) = computePlaneRotation(
+      joystickOffset: joystick,
+      currentFlipped: state.isFlipped,
+      pitchUp: MapConstants.planePitchUp,
+      pitchDown: MapConstants.planePitchDown,
+      deadZone: MapConstants.planeRotationDeadZone,
+      flipThreshold: MapConstants.planeFlipThreshold,
+    );
 
     emit(PlaneState(
       planeOffset: clamped,
@@ -142,25 +150,6 @@ class PlaneCubit extends Cubit<PlaneState> {
       planeRotation: rotation,
       isFlipped: flipped,
     ));
-  }
-
-  (double, bool) _computeRotation(Offset screenOffset) {
-    if (screenOffset.distance < MapConstants.planeRotationDeadZone) {
-      return (0, false);
-    }
-    final dy = -screenOffset.dy;
-    final t = (dy + 1) / 2;
-    final rotation = MapConstants.planePitchDown +
-        (MapConstants.planePitchUp - MapConstants.planePitchDown) * t;
-    final shouldFlip = screenOffset.dx.abs() >= MapConstants.planeFlipThreshold
-        ? screenOffset.dx < 0
-        : state.isFlipped;
-    return (rotation, shouldFlip);
-  }
-
-  Offset _clampToRadius(Offset offset, double radius) {
-    if (offset.distance <= radius) return offset;
-    return offset * (radius / offset.distance);
   }
 
   @override
