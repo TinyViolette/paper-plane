@@ -84,8 +84,8 @@ void main() {
     // 旋轉角度測試
     // ========================================
     group('旋轉角度對應', () {
-      test('搖桿拉到最上（dy=-1）應接近 pitchUp', () {
-        // 搖桿完全往上推時，飛機應達到最大仰角
+      test('搖桿拉到最上（dy=-1）應回傳 pitchUp', () {
+        // 搖桿完全往上推時，應達到 pitchUp 角度
         final (rotation, _) = computePlaneRotation(
           joystickOffset: const Offset(0, -1),
           currentFlipped: false,
@@ -97,8 +97,8 @@ void main() {
         expect(rotation, closeTo(pitchUp, 0.01));
       });
 
-      test('搖桿推到最下（dy=+1）應接近 pitchDown', () {
-        // 搖桿完全往下推時，飛機應達到最大俯角
+      test('搖桿推到最下（dy=+1）應回傳 pitchDown', () {
+        // 搖桿完全往下推時，應達到 pitchDown 角度
         final (rotation, _) = computePlaneRotation(
           joystickOffset: const Offset(0, 1),
           currentFlipped: false,
@@ -137,6 +137,21 @@ void main() {
           flipThreshold: flipThreshold,
         );
         final expected = pitchDown + (pitchUp - pitchDown) * 0.75;
+        expect(rotation, closeTo(expected, 0.01));
+      });
+
+      test('搖桿在垂直中間（dy=0）應為 pitchUp 和 pitchDown 的內插值', () {
+        // 搖桿在垂直中心時，t = 0.5 → rotation = (pitchUp + pitchDown) / 2
+        // 使用較大的偏移避免死區影響，dy=0.5 → t = (-0.5+1)/2 = 0.25
+        final (rotation, _) = computePlaneRotation(
+          joystickOffset: const Offset(0, 0.5),
+          currentFlipped: false,
+          pitchUp: pitchUp,
+          pitchDown: pitchDown,
+          deadZone: deadZone,
+          flipThreshold: flipThreshold,
+        );
+        final expected = pitchDown + (pitchUp - pitchDown) * 0.25;
         expect(rotation, closeTo(expected, 0.01));
       });
     });
@@ -241,8 +256,8 @@ void main() {
     // 綜合情境測試（回歸測試）
     // ========================================
     group('回歸：實際搖桿操作情境', () {
-      test('右上推（dx>0, dy<0）：不翻轉、仰角方向', () {
-        // 搖桿往右上方推，飛機應朝右上方仰飛
+      test('右上推（dx>0, dy<0）：不翻轉、朝 pitchUp 方向', () {
+        // 搖桿往右上方推，飛機應朝 pitchUp 方向旋轉
         final (rotation, flipped) = computePlaneRotation(
           joystickOffset: const Offset(0.8, -0.8),
           currentFlipped: false,
@@ -253,11 +268,11 @@ void main() {
         );
         expect(flipped, false);
         // dy=-0.8 → t = (0.8+1)/2 = 0.9 → 接近 pitchUp
-        expect(rotation, greaterThan(0));
+        expect(rotation, closeTo(pitchDown + (pitchUp - pitchDown) * 0.9, 0.01));
       });
 
-      test('左下推（dx<0, dy>0）：翻轉、俯角方向', () {
-        // 搖桿往左下方推，飛機應翻轉朝左並俯衝
+      test('左下推（dx<0, dy>0）：翻轉、朝 pitchDown 方向', () {
+        // 搖桿往左下方推，飛機應翻轉朝 pitchDown 方向旋轉
         final (rotation, flipped) = computePlaneRotation(
           joystickOffset: const Offset(-0.8, 0.8),
           currentFlipped: false,
@@ -268,7 +283,7 @@ void main() {
         );
         expect(flipped, true);
         // dy=0.8 → t = (-0.8+1)/2 = 0.1 → 接近 pitchDown
-        expect(rotation, lessThan(0));
+        expect(rotation, closeTo(pitchDown + (pitchUp - pitchDown) * 0.1, 0.01));
       });
 
       test('放開搖桿回中：保留放開前的翻轉方向', () {
