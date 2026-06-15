@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
-import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
 
 class PlaneOverlay extends StatelessWidget {
@@ -12,7 +11,7 @@ class PlaneOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<PlaneCubit, PlaneState>(
+    return BlocBuilder<Cubit<PlaneState>, PlaneState>(
       buildWhen: (previous, current) =>
           previous.planeOffset != current.planeOffset ||
           previous.planeRotation != current.planeRotation ||

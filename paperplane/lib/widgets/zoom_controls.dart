@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
-import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 
@@ -75,7 +74,7 @@ class _ZoomControlsState extends State<ZoomControls> {
               ),
             ),
           ),
-          BlocBuilder<PlaneCubit, PlaneState>(
+          BlocBuilder<Cubit<PlaneState>, PlaneState>(
             buildWhen: (prev, curr) => prev.isLanded != curr.isLanded,
             builder: (context, planeState) {
               final isLanded = planeState.isLanded;

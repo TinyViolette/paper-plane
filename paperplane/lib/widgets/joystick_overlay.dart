@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
 import 'package:paperplane/cubit/joystick/joystick_state.dart';
-import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
 
 class JoystickOverlay extends StatefulWidget {
@@ -67,7 +66,7 @@ class _JoystickOverlayState extends State<JoystickOverlay>
     return Positioned(
       left: 16,
       bottom: 16,
-      child: BlocBuilder<PlaneCubit, PlaneState>(
+      child: BlocBuilder<Cubit<PlaneState>, PlaneState>(
         buildWhen: (prev, curr) =>
             prev.isLanded != curr.isLanded,
         builder: (context, planeState) {

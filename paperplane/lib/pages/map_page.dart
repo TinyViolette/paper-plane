@@ -6,6 +6,7 @@ import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
 import 'package:paperplane/cubit/joystick/joystick_state.dart';
 import 'package:paperplane/cubit/plane/plane_cubit.dart';
+import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_state.dart';
 import 'package:paperplane/widgets/joystick_overlay.dart';
@@ -48,7 +49,7 @@ class _MapPageState extends State<MapPage> {
       providers: [
         BlocProvider<JoystickCubit>.value(value: _joystickCubit),
         BlocProvider<ZoomCubit>.value(value: _zoomCubit),
-        BlocProvider<PlaneCubit>.value(value: _planeCubit),
+        BlocProvider<Cubit<PlaneState>>.value(value: _planeCubit),
       ],
       child: BlocListener<ZoomCubit, ZoomState>(
         listener: (context, state) {
