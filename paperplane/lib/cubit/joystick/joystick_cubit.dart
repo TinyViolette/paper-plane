@@ -1,95 +1,68 @@
-import 'package:flutter/animation.dart';
+import 'dart:ui';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/joystick/joystick_state.dart';
 
+/// 搖桿狀態管理 Cubit。
+///
+/// 只負責狀態邏輯（位置追蹤、狀態轉換），不持有 AnimationController。
+/// 動畫執行由 [JoystickOverlay] widget 負責。
 class JoystickCubit extends Cubit<JoystickState> {
-  AnimationController? _controller;
   double _x = 0;
   double _y = 0;
-  double _animStartX = 0;
-  double _animStartY = 0;
-  double _animTargetX = 0;
-  double _animTargetY = 0;
-  bool _isAnimating = false;
+
+  /// 動畫目標位置，由 widget 讀取後驅動動畫。
+  Offset _targetOffset = Offset.zero;
+  Offset get targetOffset => _targetOffset;
+
+  double get currentX => _x;
+  double get currentY => _y;
 
   JoystickCubit() : super(const JoystickIdle(Offset.zero));
 
-  void attachTicker(TickerProvider ticker) {
-    _controller = AnimationController(
-      vsync: ticker,
-      duration: MapConstants.joystickReturnDuration,
-    );
-    _controller!.addListener(_onAnimFrame);
-    _controller!.addStatusListener(_onAnimStatus);
-  }
-
-  void _onAnimFrame() {
-    if (!_isAnimating) return;
-    final t = _controller!.value;
-    _x = _animStartX + (_animTargetX - _animStartX) * t;
-    _y = _animStartY + (_animTargetY - _animStartY) * t;
-    emit(JoystickAnimating(Offset(_x, _y)));
-  }
-
-  void _onAnimStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      _isAnimating = false;
-      _x = _animTargetX;
-      _y = _animTargetY;
-      emit(JoystickIdle(Offset(_x, _y)));
-    }
-  }
-
+  /// 拖曳更新：直接設定位置，emit [JoystickDragging]。
   void updateDrag(Offset normalizedOffset) {
-    _controller?.stop();
-    _isAnimating = false;
     _x = normalizedOffset.dx.clamp(-1.0, 1.0);
     _y = normalizedOffset.dy.clamp(-1.0, 1.0);
     emit(JoystickDragging(Offset(_x, _y)));
   }
 
+  /// 結束拖曳：觸發回中動畫。
+  /// emit [JoystickAnimating]，widget 偵測後啟動動畫回到 [_targetOffset]。
   void endDrag() {
-    _animateTo(0, 0, MapConstants.joystickReturnDuration);
+    _targetOffset = Offset.zero;
+    emit(JoystickAnimating(Offset(_x, _y)));
   }
 
-  void moveUp() {
-    final distance = (_y - (-1.0)).abs();
-    final seconds = distance / MapConstants.planeButtonMoveSpeed;
-    _animateTo(
-      _x,
-      -1.0,
-      Duration(milliseconds: (seconds * 1000).round()),
-    );
-  }
-
-  void moveDown() {
-    final distance = (_y - 1.0).abs();
-    final seconds = distance / MapConstants.planeButtonMoveSpeed;
-    _animateTo(
-      _x,
-      1.0,
-      Duration(milliseconds: (seconds * 1000).round()),
-    );
-  }
-
+  /// 外部觸發回中（例如地圖事件）。
   void returnToCenter() {
-    _animateTo(0, 0, MapConstants.joystickReturnDuration);
+    _targetOffset = Offset.zero;
+    emit(JoystickAnimating(Offset(_x, _y)));
   }
 
-  void _animateTo(double targetX, double targetY, Duration duration) {
-    _animStartX = _x;
-    _animStartY = _y;
-    _animTargetX = targetX;
-    _animTargetY = targetY;
-    _isAnimating = true;
-    _controller!.duration = duration;
-    _controller!.forward(from: 0);
+  /// 按鈕觸發向上移動。
+  void moveUp() {
+    _targetOffset = Offset(_x, -1.0);
+    emit(JoystickAnimating(Offset(_x, _y)));
   }
 
-  @override
-  Future<void> close() {
-    _controller?.dispose();
-    return super.close();
+  /// 按鈕觸發向下移動。
+  void moveDown() {
+    _targetOffset = Offset(_x, 1.0);
+    emit(JoystickAnimating(Offset(_x, _y)));
+  }
+
+  /// 由 widget 動畫驅動的位置更新（每幀呼叫）。
+  void animateToPosition(double x, double y) {
+    _x = x;
+    _y = y;
+    emit(JoystickAnimating(Offset(_x, _y)));
+  }
+
+  /// 由 widget 在動畫完成時呼叫，轉換為 Idle 狀態。
+  void emitIdle() {
+    _x = _targetOffset.dx;
+    _y = _targetOffset.dy;
+    emit(JoystickIdle(Offset(_x, _y)));
   }
 }

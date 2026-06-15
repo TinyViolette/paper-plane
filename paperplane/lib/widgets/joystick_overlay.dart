@@ -15,6 +15,7 @@ class JoystickOverlay extends StatefulWidget {
 class _JoystickOverlayState extends State<JoystickOverlay>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
+  late AnimationController _animController;
 
   @override
   void initState() {
@@ -24,7 +25,35 @@ class _JoystickOverlayState extends State<JoystickOverlay>
       duration: MapConstants.joystickFadeDuration,
       value: MapConstants.joystickInactiveAlpha,
     );
-    context.read<JoystickCubit>().attachTicker(this);
+    _animController = AnimationController(
+      vsync: this,
+      duration: MapConstants.joystickReturnDuration,
+    );
+    _animController.addListener(_onAnimFrame);
+    _animController.addStatusListener(_onAnimStatus);
+  }
+
+  /// 每幀更新 cubit 位置。
+  void _onAnimFrame() {
+    final cubit = context.read<JoystickCubit>();
+    final target = cubit.targetOffset;
+    final t = _animController.value;
+    final x = cubit.currentX + (target.dx - cubit.currentX) * t;
+    final y = cubit.currentY + (target.dy - cubit.currentY) * t;
+    cubit.animateToPosition(x, y);
+  }
+
+  /// 動畫完成，通知 cubit 回到 Idle。
+  void _onAnimStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      context.read<JoystickCubit>().emitIdle();
+    }
+  }
+
+  /// 偵測 cubit 從非 Animating → Animating，啟動動畫。
+  void _onJoystickStateChanged(BuildContext context, JoystickState state) {
+    if (state is! JoystickAnimating) return;
+    _animController.forward(from: 0);
   }
 
   void _onPanStart(DragStartDetails details) {
@@ -57,6 +86,9 @@ class _JoystickOverlayState extends State<JoystickOverlay>
 
   @override
   void dispose() {
+    _animController.removeListener(_onAnimFrame);
+    _animController.removeStatusListener(_onAnimStatus);
+    _animController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -66,41 +98,47 @@ class _JoystickOverlayState extends State<JoystickOverlay>
     return Positioned(
       left: 16,
       bottom: 16,
-      child: BlocBuilder<Cubit<PlaneState>, PlaneState>(
+      child: BlocConsumer<JoystickCubit, JoystickState>(
+        listenWhen: (prev, curr) =>
+            curr is JoystickAnimating && prev is! JoystickAnimating,
+        listener: _onJoystickStateChanged,
         buildWhen: (prev, curr) =>
-            prev.isLanded != curr.isLanded,
-        builder: (context, planeState) {
-          final enabled = !planeState.isLanded;
-          return AnimatedBuilder(
-            animation: _fadeController,
-            builder: (context, child) {
-              return Opacity(
-                opacity: enabled ? _fadeController.value : 0.05,
-                child: child,
-              );
-            },
-            child: IgnorePointer(
-              ignoring: !enabled,
-              child: GestureDetector(
-                onPanStart: enabled ? _onPanStart : null,
-                onPanUpdate: enabled ? _onPanUpdate : null,
-                onPanEnd: enabled ? _onPanEnd : null,
-                child: BlocBuilder<JoystickCubit, JoystickState>(
-                  builder: (context, state) {
-                    return CustomPaint(
+            prev.offset != curr.offset ||
+            prev.runtimeType != curr.runtimeType,
+        builder: (context, joystickState) {
+          return BlocBuilder<Cubit<PlaneState>, PlaneState>(
+            buildWhen: (prev, curr) =>
+                prev.isLanded != curr.isLanded,
+            builder: (context, planeState) {
+              final enabled = !planeState.isLanded;
+              return AnimatedBuilder(
+                animation: _fadeController,
+                builder: (context, child) {
+                  return Opacity(
+                    opacity: enabled ? _fadeController.value : 0.05,
+                    child: child,
+                  );
+                },
+                child: IgnorePointer(
+                  ignoring: !enabled,
+                  child: GestureDetector(
+                    onPanStart: enabled ? _onPanStart : null,
+                    onPanUpdate: enabled ? _onPanUpdate : null,
+                    onPanEnd: enabled ? _onPanEnd : null,
+                    child: CustomPaint(
                       size: Size(
                         MapConstants.joystickSize,
                         MapConstants.joystickSize,
                       ),
                       painter: _JoystickPainter(
-                        offset: enabled ? state.offset : Offset.zero,
+                        offset: enabled ? joystickState.offset : Offset.zero,
                         isEnabled: enabled,
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
       ),
