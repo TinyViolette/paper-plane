@@ -152,7 +152,10 @@ class PlaneCubit extends Cubit<PlaneState> {
     final t = (dy + 1) / 2;
     final rotation = MapConstants.planePitchDown +
         (MapConstants.planePitchUp - MapConstants.planePitchDown) * t;
-    return (rotation, screenOffset.dx < 0);
+    final shouldFlip = screenOffset.dx.abs() >= MapConstants.planeFlipThreshold
+        ? screenOffset.dx < 0
+        : state.isFlipped;
+    return (rotation, shouldFlip);
   }
 
   Offset _clampToRadius(Offset offset, double radius) {

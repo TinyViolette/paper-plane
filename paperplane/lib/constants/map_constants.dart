@@ -32,6 +32,7 @@ class MapConstants {
   static const double floatSpeedMaxHalfPeriod = 0.5; // seconds (joystick edge)
 
   static const double planeRotationDeadZone = 0.05;
+  static const double planeFlipThreshold = 0.3;
   static const double planePitchUp = -50;
   static const double planePitchDown = 120;
 }
