@@ -13,6 +13,11 @@ class ZoomCubit extends Cubit<ZoomState> {
     emit(ZoomUpdated(newZoom));
   }
 
+  void setZoom(double zoom) {
+    final clamped = zoom.clamp(MapConstants.minZoom, MapConstants.maxZoom);
+    emit(ZoomUpdated(clamped));
+  }
+
   void zoomOut() {
     final newZoom = (state.zoom - MapConstants.zoomStep).clamp(
       MapConstants.minZoom,

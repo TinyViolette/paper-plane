@@ -31,6 +31,12 @@ class MapConstants {
   static const double floatSpeedMinHalfPeriod = 1.0; // seconds (joystick center)
   static const double floatSpeedMaxHalfPeriod = 0.5; // seconds (joystick edge)
 
+  static const double randomTeleportZoom = 4;
+  static const double randomTeleportMinLat = -60;
+  static const double randomTeleportMaxLat = 75;
+  static const double randomTeleportMinLng = -180;
+  static const double randomTeleportMaxLng = 180;
+
   static const double planeRotationDeadZone = 0.05;
   static const double planeFlipThreshold = 0.3;
   static const double planePitchUp = -50;

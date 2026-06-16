@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,6 +14,7 @@ import 'package:paperplane/cubit/zoom/zoom_state.dart';
 import 'package:paperplane/widgets/joystick_overlay.dart';
 import 'package:paperplane/widgets/map_info_overlay.dart';
 import 'package:paperplane/widgets/plane_overlay.dart';
+import 'package:paperplane/widgets/random_teleport_button.dart';
 import 'package:paperplane/widgets/zoom_controls.dart';
 
 class MapPage extends StatefulWidget {
@@ -42,6 +45,19 @@ class _MapPageState extends State<MapPage> {
     _zoomCubit.close();
     _mapController.dispose();
     super.dispose();
+  }
+
+  void _teleport() {
+    final random = Random();
+    final lat = MapConstants.randomTeleportMinLat +
+        random.nextDouble() *
+            (MapConstants.randomTeleportMaxLat - MapConstants.randomTeleportMinLat);
+    final lng = MapConstants.randomTeleportMinLng +
+        random.nextDouble() *
+            (MapConstants.randomTeleportMaxLng - MapConstants.randomTeleportMinLng);
+    final target = LatLng(lat, lng);
+    _mapController.move(target, MapConstants.randomTeleportZoom);
+    _zoomCubit.setZoom(MapConstants.randomTeleportZoom);
   }
 
   @override
@@ -90,6 +106,7 @@ class _MapPageState extends State<MapPage> {
                 ],
               ),
               MapInfoOverlay(_mapController),
+              RandomTeleportButton(onPressed: _teleport),
               const PlaneOverlay(),
               const JoystickOverlay(),
               ZoomControls(
