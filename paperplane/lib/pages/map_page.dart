@@ -10,6 +10,7 @@ import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_state.dart';
 import 'package:paperplane/widgets/joystick_overlay.dart';
+import 'package:paperplane/widgets/map_info_overlay.dart';
 import 'package:paperplane/widgets/plane_overlay.dart';
 import 'package:paperplane/widgets/zoom_controls.dart';
 
@@ -88,6 +89,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                 ],
               ),
+              MapInfoOverlay(_mapController),
               const PlaneOverlay(),
               const JoystickOverlay(),
               ZoomControls(
