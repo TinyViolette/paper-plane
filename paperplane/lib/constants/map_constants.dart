@@ -44,4 +44,12 @@ class MapConstants {
   static const double planeFlipThreshold = 0.3;
   static const double planePitchUp = -50;
   static const double planePitchDown = 120;
+
+  static const double bombMinZoom = 17.90;
+  static const double bombMaxZoom = 18.10;
+  static const Duration bombAnimationDuration = Duration(seconds: 2);
+  static const Duration bombInterval = Duration(seconds: 1);
+  static const double bombDropOffset = 35.0;
+  static const double burnMarkRadius = 15.0;
+  static const double burnMarkOpacity = 0.6;
 }

@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/cubit/function_switcher/function_switcher_state.dart';
 
 class FunctionSwitcherCubit extends Cubit<FunctionSwitcherState> {
-  static const int totalFunctions = 2;
+  static const int totalFunctions = 3;
 
   FunctionSwitcherCubit() : super(const FunctionSwitcherUpdated(0));
 

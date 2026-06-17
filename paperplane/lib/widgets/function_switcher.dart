@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:paperplane/constants/map_constants.dart';
 import 'package:paperplane/cubit/function_switcher/function_switcher_cubit.dart';
 import 'package:paperplane/cubit/function_switcher/function_switcher_state.dart';
-import 'package:paperplane/cubit/plane/plane_state.dart';
 
 class FunctionSwitcher extends StatefulWidget {
+  final MapController mapController;
   final VoidCallback onSwipeLeft;
   final VoidCallback onSwipeRight;
   final VoidCallback onTap;
 
   const FunctionSwitcher({
     super.key,
+    required this.mapController,
     required this.onSwipeLeft,
     required this.onSwipeRight,
     required this.onTap,
@@ -21,11 +24,6 @@ class FunctionSwitcher extends StatefulWidget {
 }
 
 class _FunctionSwitcherState extends State<FunctionSwitcher> {
-  static const List<IconData> _icons = [
-    Icons.add_location_alt,
-    Icons.casino,
-  ];
-
   int _slideDirection = 0;
 
   void _onSwipeLeft() {
@@ -40,17 +38,56 @@ class _FunctionSwitcherState extends State<FunctionSwitcher> {
 
   static const double _disabledAlpha = 0.5;
 
+  Widget _buildIcon(int index, bool isEnabled) {
+    final color = isEnabled
+        ? Colors.white
+        : Colors.white.withValues(alpha: _disabledAlpha);
+    final key = ValueKey<int>(index);
+
+    switch (index) {
+      case 0:
+        return Image.asset(
+          'assets/images/bomb.png',
+          key: key,
+          width: 20,
+          height: 20,
+          color: color,
+        );
+      case 1:
+        return Icon(Icons.add_location_alt, key: key, size: 20, color: color);
+      case 2:
+        return Icon(Icons.casino, key: key, size: 20, color: color);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  bool _isFunctionEnabled(int index, double zoom) {
+    switch (index) {
+      case 0:
+        return zoom >= MapConstants.bombMinZoom &&
+            zoom <= MapConstants.bombMaxZoom;
+      case 1:
+        return zoom >= MapConstants.maxZoom;
+      case 2:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
       right: 16,
       top: 16,
-      child: BlocBuilder<Cubit<PlaneState>, PlaneState>(
-        builder: (context, planeState) {
+      child: StreamBuilder<MapEvent>(
+        stream: widget.mapController.mapEventStream,
+        builder: (context, _) {
+          final zoom = widget.mapController.camera.zoom;
           return BlocBuilder<FunctionSwitcherCubit, FunctionSwitcherState>(
             builder: (context, state) {
-              final isMarkEnabled =
-                  state.selectedIndex != 0 || planeState.isLanded;
+              final isEnabled = _isFunctionEnabled(state.selectedIndex, zoom);
               return GestureDetector(
                 onHorizontalDragEnd: (details) {
                   if (details.primaryVelocity != null) {
@@ -61,7 +98,7 @@ class _FunctionSwitcherState extends State<FunctionSwitcher> {
                     }
                   }
                 },
-                onTap: isMarkEnabled ? widget.onTap : null,
+                onTap: isEnabled ? widget.onTap : null,
                 child: Container(
                   width: 40,
                   height: 40,
@@ -96,14 +133,7 @@ class _FunctionSwitcherState extends State<FunctionSwitcher> {
                           ],
                         );
                       },
-                      child: Icon(
-                        _icons[state.selectedIndex],
-                        key: ValueKey<int>(state.selectedIndex),
-                        size: 20,
-                        color: isMarkEnabled
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: _disabledAlpha),
-                      ),
+                      child: _buildIcon(state.selectedIndex, isEnabled),
                     ),
                   ),
                 ),
