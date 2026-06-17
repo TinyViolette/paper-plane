@@ -77,8 +77,12 @@ class _MapPageState extends State<MapPage> {
         },
         child: BlocListener<JoystickCubit, JoystickState>(
         listener: (context, state) {
-          final dx = state.offset.dx * MapConstants.joystickMapSpeed;
-          final dy = -state.offset.dy * MapConstants.joystickMapSpeed;
+          final zoom = _mapController.camera.zoom;
+          final effectiveZoom = max(zoom, MapConstants.joystickSpeedMinEffectiveZoom);
+          final speed = MapConstants.joystickMapSpeed *
+              pow(2, MapConstants.initialZoom - effectiveZoom);
+          final dx = state.offset.dx * speed;
+          final dy = -state.offset.dy * speed;
           final center = _mapController.camera.center;
           _mapController.move(
             LatLng(center.latitude + dy, center.longitude + dx),

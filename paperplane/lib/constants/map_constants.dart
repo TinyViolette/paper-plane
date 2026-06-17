@@ -5,10 +5,12 @@ class MapConstants {
   static const LatLng initialCenter = LatLng(25.095073530311385, 121.24963231240274);
   static const double markerWidth = 50;
 
-  static const double minZoom = 0;
+  static const double minZoom = 2;
   static const double maxZoom = 19;
   static const double zoomStep = 0.01;
-  static const Duration zoomRepeatDuration = Duration(milliseconds: 200);
+  static const Duration zoomTickInterval = Duration(milliseconds: 16);
+  static const double zoomAcceleration = 0.03;
+  static const double zoomAccelExponent = 1.1;
 
   static const double planeFloatAmplitude = 3;
   static const Duration planeFloatHalfPeriod = Duration(seconds: 1);
@@ -22,6 +24,7 @@ class MapConstants {
   static const Duration joystickFadeDuration = Duration(milliseconds: 200);
   static const Duration joystickReturnDuration = Duration(milliseconds: 500);
   static const double joystickMapSpeed = 0.00001; // deg/s at full deflection
+  static const double joystickSpeedMinEffectiveZoom = 5.0;
 
   static const double planeMoveRadiusLimit = 5.0; // px
 

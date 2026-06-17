@@ -23,17 +23,25 @@ class ZoomControls extends StatefulWidget {
 
 class _ZoomControlsState extends State<ZoomControls> {
   Timer? _repeatTimer;
+  DateTime? _zoomStartTime;
 
-  void _startRepeat(VoidCallback action) {
+  void _startRepeat(ZoomCubit cubit, {required bool zoomIn}) {
     _repeatTimer?.cancel();
-    _repeatTimer = Timer.periodic(MapConstants.zoomRepeatDuration, (_) {
-      action();
+    _zoomStartTime = DateTime.now();
+    _repeatTimer = Timer.periodic(MapConstants.zoomTickInterval, (_) {
+      final elapsed =
+          DateTime.now().difference(_zoomStartTime!).inMilliseconds / 1000.0;
+      final step = MapConstants.zoomStep *
+          (1 + MapConstants.zoomAcceleration *
+              pow(elapsed, MapConstants.zoomAccelExponent));
+      cubit.zoomBy(zoomIn ? step : -step);
     });
   }
 
   void _stopRepeat() {
     _repeatTimer?.cancel();
     _repeatTimer = null;
+    _zoomStartTime = null;
   }
 
   @override
@@ -55,7 +63,7 @@ class _ZoomControlsState extends State<ZoomControls> {
           GestureDetector(
             onTap: cubit.zoomOut,
             onLongPressStart: (_) {
-              _startRepeat(cubit.zoomOut);
+              _startRepeat(cubit, zoomIn: false);
               widget.onZoomButtonStart?.call();
             },
             onLongPressEnd: (_) {
@@ -85,7 +93,7 @@ class _ZoomControlsState extends State<ZoomControls> {
                   child: GestureDetector(
                     onTap: cubit.zoomIn,
                     onLongPressStart: (_) {
-                      _startRepeat(cubit.zoomIn);
+                      _startRepeat(cubit, zoomIn: true);
                       widget.onZoomButtonStart?.call();
                     },
                     onLongPressEnd: (_) {
