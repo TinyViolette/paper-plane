@@ -82,9 +82,19 @@ class _MapPageState extends State<MapPage> {
   }
 
   LatLng _offsetToLatLng(Offset pixelOffset, LatLng reference, double zoom) {
-    final scale = 1 / (256 * pow(2, zoom));
-    final lat = reference.latitude - pixelOffset.dy * scale * 180 / pi;
-    final lng = reference.longitude + pixelOffset.dx * scale * 360 / pi;
+    // 每個像素代表的米數（Web Mercator 投影）
+    final metersPerPixel =
+        156543.03392 * cos(reference.latitude * pi / 180) / pow(2, zoom);
+
+    // 像素偏移轉換為米
+    final dxMeters = pixelOffset.dx * metersPerPixel;
+    final dyMeters = pixelOffset.dy * metersPerPixel;
+
+    // 米轉換為經緯度
+    final lat = reference.latitude - (dyMeters / 111320);
+    final lng = reference.longitude +
+        (dxMeters / (111320 * cos(reference.latitude * pi / 180)));
+
     return LatLng(lat, lng);
   }
 
@@ -165,7 +175,7 @@ class _MapPageState extends State<MapPage> {
                     userAgentPackageName: 'com.example.paperplane',
                   ),
                   const MapMarkers(),
-                  const BurnMarkLayer(),
+                  BurnMarkLayer(mapController: _mapController),
                 ],
               ),
               MapInfoOverlay(_mapController),

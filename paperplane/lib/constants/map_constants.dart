@@ -52,4 +52,5 @@ class MapConstants {
   static const double bombDropOffset = 35.0;
   static const double burnMarkRadius = 15.0;
   static const double burnMarkOpacity = 0.6;
+  static const double burnMarkBaseZoom = 18.0;
 }
