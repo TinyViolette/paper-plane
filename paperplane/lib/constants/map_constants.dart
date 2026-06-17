@@ -53,4 +53,15 @@ class MapConstants {
   static const double burnMarkRadius = 15.0;
   static const double burnMarkOpacity = 0.6;
   static const double burnMarkBaseZoom = 18.0;
+
+  static const double blossomMinZoom = 17.0;
+  static const double blossomMaxZoom = 18.0;
+  static const double blossomRandomRadius = 30.0;
+  static const Duration blossomInterval = Duration(milliseconds: 100);
+  static const int blossomMaxCount = 100;
+  static const double blossomBaseFontSize = 16.0;
+  static const double blossomBaseZoom = 17.5;
+  static const double blossomScaleMin = 0.5;
+  static const double blossomScaleMax = 1.5;
+  static const Duration blossomFreshnessPeriod = Duration(days: 1);
 }

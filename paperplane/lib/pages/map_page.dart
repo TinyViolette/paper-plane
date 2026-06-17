@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/cubit/blossom/blossom_cubit.dart';
 import 'package:paperplane/cubit/burn_mark/burn_mark_cubit.dart';
 import 'package:paperplane/cubit/function_switcher/function_switcher_cubit.dart';
 import 'package:paperplane/cubit/joystick/joystick_cubit.dart';
@@ -14,6 +15,8 @@ import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_state.dart';
+import 'package:paperplane/widgets/blossom_layer.dart';
+import 'package:paperplane/widgets/blossom_overlay.dart';
 import 'package:paperplane/widgets/bomb_overlay.dart';
 import 'package:paperplane/widgets/burn_mark_layer.dart';
 import 'package:paperplane/widgets/function_switcher.dart';
@@ -33,11 +36,13 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final GlobalKey<BombOverlayState> _bombOverlayKey = GlobalKey<BombOverlayState>();
+  final GlobalKey<BlossomOverlayState> _blossomOverlayKey = GlobalKey<BlossomOverlayState>();
   late final JoystickCubit _joystickCubit;
   late final ZoomCubit _zoomCubit;
   late final PlaneCubit _planeCubit;
   late final MarkerCubit _markerCubit;
   late final BurnMarkCubit _burnMarkCubit;
+  late final BlossomCubit _blossomCubit;
   late final FunctionSwitcherCubit _functionSwitcherCubit;
 
   @override
@@ -48,12 +53,14 @@ class _MapPageState extends State<MapPage> {
     _planeCubit = PlaneCubit(_mapController, _joystickCubit);
     _markerCubit = MarkerCubit();
     _burnMarkCubit = BurnMarkCubit();
+    _blossomCubit = BlossomCubit();
     _functionSwitcherCubit = FunctionSwitcherCubit();
   }
 
   @override
   void dispose() {
     _functionSwitcherCubit.close();
+    _blossomCubit.close();
     _burnMarkCubit.close();
     _markerCubit.close();
     _planeCubit.close();
@@ -116,12 +123,22 @@ class _MapPageState extends State<MapPage> {
   void _handleFunctionTap() {
     final selectedIndex = _functionSwitcherCubit.state.selectedIndex;
     if (selectedIndex == 0) {
-      _bomb();
+      _toggleBlossom();
     } else if (selectedIndex == 1) {
+      _bomb();
+    } else if (selectedIndex == 2) {
       _addMarker();
     } else {
       _teleport();
     }
+  }
+
+  void _toggleBlossom() {
+    _blossomOverlayKey.currentState?.toggleBlossomMode();
+  }
+
+  void _clearBlossoms() {
+    _blossomCubit.clearBlossoms();
   }
 
   @override
@@ -133,6 +150,7 @@ class _MapPageState extends State<MapPage> {
         BlocProvider<Cubit<PlaneState>>.value(value: _planeCubit),
         BlocProvider<MarkerCubit>.value(value: _markerCubit),
         BlocProvider<BurnMarkCubit>.value(value: _burnMarkCubit),
+        BlocProvider<BlossomCubit>.value(value: _blossomCubit),
         BlocProvider<FunctionSwitcherCubit>.value(value: _functionSwitcherCubit),
       ],
       child: BlocListener<ZoomCubit, ZoomState>(
@@ -176,15 +194,19 @@ class _MapPageState extends State<MapPage> {
                   ),
                   const MapMarkers(),
                   BurnMarkLayer(mapController: _mapController),
+                  BlossomLayer(mapController: _mapController),
                 ],
               ),
               MapInfoOverlay(_mapController),
               FunctionSwitcher(
                 mapController: _mapController,
+                isBlossomMode: _blossomOverlayKey.currentState?.isBlossomMode ?? false,
                 onSwipeLeft: () => _functionSwitcherCubit.next(),
                 onSwipeRight: () => _functionSwitcherCubit.previous(),
                 onTap: _handleFunctionTap,
+                onLongPress: _clearBlossoms,
               ),
+              BlossomOverlay(mapController: _mapController, key: _blossomOverlayKey),
               BombOverlay(mapController: _mapController, key: _bombOverlayKey),
               const PlaneOverlay(),
               const JoystickOverlay(),
