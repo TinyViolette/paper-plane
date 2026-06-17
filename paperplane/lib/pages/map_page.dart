@@ -11,10 +11,13 @@ import 'package:paperplane/cubit/plane/plane_cubit.dart';
 import 'package:paperplane/cubit/plane/plane_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_state.dart';
+import 'package:paperplane/cubit/function_switcher/function_switcher_cubit.dart';
+import 'package:paperplane/cubit/marker/marker_cubit.dart';
+import 'package:paperplane/widgets/function_switcher.dart';
 import 'package:paperplane/widgets/joystick_overlay.dart';
 import 'package:paperplane/widgets/map_info_overlay.dart';
+import 'package:paperplane/widgets/map_markers.dart';
 import 'package:paperplane/widgets/plane_overlay.dart';
-import 'package:paperplane/widgets/random_teleport_button.dart';
 import 'package:paperplane/widgets/zoom_controls.dart';
 
 class MapPage extends StatefulWidget {
@@ -29,6 +32,8 @@ class _MapPageState extends State<MapPage> {
   late final JoystickCubit _joystickCubit;
   late final ZoomCubit _zoomCubit;
   late final PlaneCubit _planeCubit;
+  late final MarkerCubit _markerCubit;
+  late final FunctionSwitcherCubit _functionSwitcherCubit;
 
   @override
   void initState() {
@@ -36,10 +41,14 @@ class _MapPageState extends State<MapPage> {
     _joystickCubit = JoystickCubit();
     _zoomCubit = ZoomCubit();
     _planeCubit = PlaneCubit(_mapController, _joystickCubit);
+    _markerCubit = MarkerCubit();
+    _functionSwitcherCubit = FunctionSwitcherCubit();
   }
 
   @override
   void dispose() {
+    _functionSwitcherCubit.close();
+    _markerCubit.close();
     _planeCubit.close();
     _joystickCubit.close();
     _zoomCubit.close();
@@ -60,6 +69,20 @@ class _MapPageState extends State<MapPage> {
     _zoomCubit.setZoom(MapConstants.randomTeleportZoom);
   }
 
+  void _addMarker() {
+    final center = _mapController.camera.center;
+    _markerCubit.addMarker(center);
+  }
+
+  void _handleFunctionTap() {
+    final selectedIndex = _functionSwitcherCubit.state.selectedIndex;
+    if (selectedIndex == 0) {
+      _addMarker();
+    } else {
+      _teleport();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -67,6 +90,8 @@ class _MapPageState extends State<MapPage> {
         BlocProvider<JoystickCubit>.value(value: _joystickCubit),
         BlocProvider<ZoomCubit>.value(value: _zoomCubit),
         BlocProvider<Cubit<PlaneState>>.value(value: _planeCubit),
+        BlocProvider<MarkerCubit>.value(value: _markerCubit),
+        BlocProvider<FunctionSwitcherCubit>.value(value: _functionSwitcherCubit),
       ],
       child: BlocListener<ZoomCubit, ZoomState>(
         listener: (context, state) {
@@ -107,10 +132,15 @@ class _MapPageState extends State<MapPage> {
                         'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.example.paperplane',
                   ),
+                  const MapMarkers(),
                 ],
               ),
               MapInfoOverlay(_mapController),
-              RandomTeleportButton(onPressed: _teleport),
+              FunctionSwitcher(
+                onSwipeLeft: () => _functionSwitcherCubit.next(),
+                onSwipeRight: () => _functionSwitcherCubit.previous(),
+                onTap: _handleFunctionTap,
+              ),
               const PlaneOverlay(),
               const JoystickOverlay(),
               ZoomControls(
