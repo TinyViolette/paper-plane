@@ -108,7 +108,7 @@ class _RulerPainter extends CustomPainter {
 
       final isInRange =
           range != null && value >= range.$1 && value <= range.$2;
-      final baseColor = isInRange ? Colors.yellow : Colors.white70;
+      final baseColor = isInRange ? Colors.orange : Colors.grey;
 
       final x = i * 0.1 * ZoomScale._pixelsPerUnit;
       final isMajor = (value - value.roundToDouble()).abs() < 0.001;
