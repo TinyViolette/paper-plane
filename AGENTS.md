@@ -14,12 +14,13 @@
 
 ## 程式碼及架構
 * 使用 BLoC/Cubit 架構（flutter_bloc 套件）
-* 3 個 Cubit：JoystickCubit、PlaneCubit、ZoomCubit
-* JoystickState 和 ZoomState 使用 Dart 3 sealed class
+* 7 個 Cubit：BlossomCubit、BurnMarkCubit、FunctionSwitcherCubit、JoystickCubit、MarkerCubit、PlaneCubit、ZoomCubit
+* 大部分 State 使用 Dart 3 sealed class（JoystickState、ZoomState、BlossomState、BurnMarkState、FunctionSwitcherState、MarkerState）
 * PlaneState 為一般 immutable class
 * 單一頁面應用：MapPage（StatefulWidget）
 * 使用 flutter_map 顯示 OpenStreetMap，已停用內建互動（InteractiveFlag.none），改用自製搖桿及縮放控制
 * 無 codegen（無 build_runner、無 .g.dart、無 .freezed.dart）
+* 使用 shared_preferences 持久化花瓣資料
 
 ## 平台約束
 * 以 Flutter/Dart 程式碼為主，除非必要否則不異動 android、ios、macos 資料夾
@@ -28,5 +29,13 @@
 * 所有程式碼需符合 SOLID 原則並遵循 lint 規範
 
 ## 測試
-* 測試檔位於 `paperplane/test/widget_test.dart`
+* 測試目錄結構：
+  - `test/widget_test.dart` — 主要 widget 測試
+  - `test/unit/` — 單元測試（rotation_utils_test.dart、zoom_cubit_test.dart）
+  - `test/widget/` — widget 測試（joystick_overlay_test.dart、plane_overlay_test.dart、zoom_controls_test.dart）
+  - `test/helpers/` — 測試輔助（fake_plane_cubit.dart）
 * 執行指令：`flutter test`（在 paperplane/ 下）
+
+## 資源
+* 圖片資源位於 `paperplane/assets/images/`
+* 包含：blossom.png、bomb.png、plane.png
