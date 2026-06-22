@@ -64,4 +64,5 @@ class MapConstants {
   static const double blossomScaleMin = 0.5;
   static const double blossomScaleMax = 1.5;
   static const Duration blossomFreshnessPeriod = Duration(days: 1);
+
 }

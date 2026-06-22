@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:paperplane/constants/map_constants.dart';
+import 'package:paperplane/cubit/function_switcher/function_switcher_cubit.dart';
+import 'package:paperplane/cubit/function_switcher/function_switcher_state.dart';
 import 'package:paperplane/cubit/zoom/zoom_cubit.dart';
 import 'package:paperplane/cubit/zoom/zoom_state.dart';
 
@@ -13,41 +15,49 @@ class ZoomScale extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ZoomCubit, ZoomState>(
-      builder: (context, state) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final visibleWidth = constraints.maxWidth;
-            final rulerTotalWidth =
-                (MapConstants.maxZoom - MapConstants.minZoom) * _pixelsPerUnit;
-            final rulerOffset =
-                -(state.zoom - MapConstants.minZoom) * _pixelsPerUnit +
-                    visibleWidth / 2;
+    return BlocBuilder<FunctionSwitcherCubit, FunctionSwitcherState>(
+      builder: (context, funcState) {
+        return BlocBuilder<ZoomCubit, ZoomState>(
+          builder: (context, state) {
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final visibleWidth = constraints.maxWidth;
+                final rulerTotalWidth =
+                    (MapConstants.maxZoom - MapConstants.minZoom) *
+                        _pixelsPerUnit;
+                final rulerOffset =
+                    -(state.zoom - MapConstants.minZoom) * _pixelsPerUnit +
+                        visibleWidth / 2;
 
-            return SizedBox(
-              height: _rulerHeight,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned(
-                    left: rulerOffset,
-                    top: 0,
-                    width: rulerTotalWidth,
-                    height: _rulerHeight,
-                    child: CustomPaint(
-                      painter: _RulerPainter(state.zoom),
-                    ),
+                return SizedBox(
+                  height: _rulerHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: rulerOffset,
+                        top: 0,
+                        width: rulerTotalWidth,
+                        height: _rulerHeight,
+                        child: CustomPaint(
+                          painter: _RulerPainter(
+                            state.zoom,
+                            funcState.selectedIndex,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: visibleWidth / 2 - _pointerSize / 2,
+                        top: 0,
+                        child: CustomPaint(
+                          size: Size(_pointerSize, _pointerSize),
+                          painter: _PointerPainter(),
+                        ),
+                      ),
+                    ],
                   ),
-                  Positioned(
-                    left: visibleWidth / 2 - _pointerSize / 2,
-                    top: 0,
-                    child: CustomPaint(
-                      size: Size(_pointerSize, _pointerSize),
-                      painter: _PointerPainter(),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -58,13 +68,14 @@ class ZoomScale extends StatelessWidget {
 
 class _RulerPainter extends CustomPainter {
   final double currentZoom;
+  final int functionIndex;
   static const double _majorTickHeight = 14.0;
   static const double _minorTickHeight = 6.0;
   static const double _tickTop = 4.0;
   static const double _fadeStart = 2.0;
   static const double _fadeEnd = 4.0;
 
-  _RulerPainter(this.currentZoom);
+  _RulerPainter(this.currentZoom, this.functionIndex);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -74,6 +85,17 @@ class _RulerPainter extends CustomPainter {
     );
 
     final min = MapConstants.minZoom;
+    final (double, double)? range;
+    switch (functionIndex) {
+      case 0:
+        range = (MapConstants.blossomMinZoom, MapConstants.blossomMaxZoom);
+      case 1:
+        range = (MapConstants.bombMinZoom, MapConstants.bombMaxZoom);
+      case 2:
+        range = (MapConstants.maxZoom, MapConstants.maxZoom);
+      default:
+        range = null;
+    }
 
     for (int i = 0; i <= ((MapConstants.maxZoom - min) * 10).round(); i++) {
       final value = min + i * 0.1;
@@ -84,12 +106,16 @@ class _RulerPainter extends CustomPainter {
           ? 1.0
           : 1.0 - (distance - _fadeStart) / (_fadeEnd - _fadeStart);
 
+      final isInRange =
+          range != null && value >= range.$1 && value <= range.$2;
+      final baseColor = isInRange ? Colors.yellow : Colors.white70;
+
       final x = i * 0.1 * ZoomScale._pixelsPerUnit;
       final isMajor = (value - value.roundToDouble()).abs() < 0.001;
       final tickHeight = isMajor ? _majorTickHeight : _minorTickHeight;
 
       final tickPaint = Paint()
-        ..color = Colors.white70.withValues(alpha: opacity)
+        ..color = baseColor.withValues(alpha: opacity)
         ..strokeWidth = 1.0;
 
       canvas.drawLine(
@@ -102,7 +128,7 @@ class _RulerPainter extends CustomPainter {
         textPainter.text = TextSpan(
           text: value.round().toString(),
           style: TextStyle(
-            color: Colors.white70.withValues(alpha: opacity),
+            color: baseColor.withValues(alpha: opacity),
             fontSize: 10,
           ),
         );
@@ -117,7 +143,8 @@ class _RulerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RulerPainter oldDelegate) =>
-      oldDelegate.currentZoom != currentZoom;
+      oldDelegate.currentZoom != currentZoom ||
+      oldDelegate.functionIndex != functionIndex;
 }
 
 class _PointerPainter extends CustomPainter {
